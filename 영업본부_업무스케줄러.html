@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영업본부 업무 스케줄러 | AJWBP-003-01</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --border: #e8e6e0;
+  --border-strong: #d0cdc5;
+  --text: #1a1916;
+  --text-muted: #6b6860;
+  --text-faint: #a8a59f;
+  --purple: #534AB7;
+  --purple-light: #EEEDFE;
+  --purple-border: #AFA9EC;
+  --red: #E24B4A;
+  --red-light: #FCEBEB;
+  --red-border: #F09595;
+  --amber: #BA7517;
+  --amber-light: #FAEEDA;
+  --green: #085041;
+  --green-light: #E1F5EE;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+.container { max-width: 860px; margin: 0 auto; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1.5px solid var(--border);
+}
+.header-left h1 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.header-left p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+.sync-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--green);
+  background: var(--green-light);
+  padding: 4px 10px; border-radius: 99px;
+  font-weight: 500;
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-val { font-size: 26px; font-weight: 700; color: var(--text); }
+.stat-val.danger { color: var(--red); }
+
+/* Progress */
+.progress-wrap { margin-bottom: 1.5rem; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.progress-bar { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--purple); border-radius: 99px; transition: width 0.4s ease; }
+
+/* View Tabs */
+.view-tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
+.view-tab {
+  padding: 7px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-muted);
+  transition: all 0.15s;
+}
+.view-tab.active { background: var(--purple-light); border-color: var(--purple-border); color: var(--purple); }
+.view-tab:hover:not(.active) { background: var(--bg); }
+
+/* Filter */
+.filter-row { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.filter-btn {
+  padding: 4px 14px; font-size: 12px; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-muted); cursor: pointer; font-weight: 500;
+  transition: all 0.15s;
+}
+.filter-btn.on { background: var(--purple); border-color: var(--purple); color: white; }
+.filter-btn:hover:not(.on) { background: var(--bg); }
+
+/* Section Label */
+.section-label {
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  letter-spacing: 0.8px; text-transform: uppercase;
+  margin: 1.25rem 0 8px;
+  padding-left: 2px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* Task Item */
+.task-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s;
+}
+.task-item:hover { border-color: var(--border-strong); }
+.task-item.urgent-border { border-left: 3px solid var(--red); }
+.task-item.done-item { opacity: 0.45; }
+
+.task-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; }
+
+.checkbox {
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px; background: var(--surface);
+  transition: all 0.15s;
+}
+.checkbox:hover { border-color: var(--purple); }
+.checkbox.checked { background: var(--purple); border-color: var(--purple); }
+.checkbox.checked::after {
+  content: '';
+  width: 11px; height: 6px;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translateY(-1px);
+  display: block;
+}
+
+.task-body { flex: 1; min-width: 0; }
+.task-text { font-size: 14px; color: var(--text); line-height: 1.5; font-weight: 500; }
+.task-text.striked { text-decoration: line-through; color: var(--text-faint); font-weight: 400; }
+.task-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+.badge { font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 500; white-space: nowrap; }
+.badge-person { background: var(--purple-light); color: #3C3489; }
+.badge-deadline { background: var(--amber-light); color: var(--amber); }
+.badge-deadline.urg { background: var(--red-light); color: #A32D2D; }
+.badge-cat { background: var(--green-light); color: var(--green); }
+.badge-urgent { background: var(--red-light); color: #A32D2D; font-weight: 700; }
+
+.reason-toggle {
+  font-size: 12px; color: var(--text-muted);
+  cursor: pointer; padding: 4px 10px;
+  border-radius: 6px; border: 1px solid var(--border);
+  margin-left: auto; white-space: nowrap; flex-shrink: 0;
+  background: var(--bg); transition: all 0.15s; align-self: center;
+  font-weight: 500;
+}
+.reason-toggle:hover { background: var(--border); }
+
+.reason-area {
+  border-top: 1px solid var(--border);
+  padding: 12px 14px 14px 46px;
+  background: var(--bg);
+}
+.reason-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+.reason-input {
+  width: 100%; padding: 9px 12px; font-size: 13px;
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); color: var(--text);
+  resize: none; line-height: 1.5;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: border-color 0.15s;
+}
+.reason-input:focus { outline: none; border-color: var(--purple-border); }
+.save-btn {
+  margin-top: 8px; padding: 6px 16px; font-size: 12px;
+  border: 1px solid var(--border-strong); border-radius: 7px;
+  background: var(--surface); color: var(--text); cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 500;
+  transition: all 0.15s;
+}
+.save-btn:hover { background: var(--purple-light); border-color: var(--purple-border); color: var(--purple); }
+.saved-msg { font-size: 12px; color: var(--green); margin-left: 8px; display: none; font-weight: 500; }
+.reason-display {
+  font-size: 13px; color: var(--amber);
+  background: var(--amber-light); border-radius: 7px;
+  padding: 7px 11px; margin-top: 4px;
+  border: 1px solid #FAC775;
+}
+.reason-display-prefix { font-weight: 700; margin-right: 4px; }
+
+.empty { text-align: center; padding: 3rem; color: var(--text-faint); font-size: 14px; }
+
+footer {
+  text-align: center; margin-top: 3rem;
+  font-size: 12px; color: var(--text-faint);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>영업본부 업무 스케줄러</h1>
+      <p>4/20 회의록 기준 &nbsp;·&nbsp; 문서번호 AJWBP-003-01</p>
+    </div>
+    <div class="sync-badge"><span class="sync-dot"></span>로컬 저장 활성</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">전체 업무</div><div class="stat-val" id="statTotal">15</div></div>
+    <div class="stat-card"><div class="stat-label">완료</div><div class="stat-val" id="statDone">0</div></div>
+    <div class="stat-card"><div class="stat-label">미완료</div><div class="stat-val danger" id="statLeft">15</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span>진행률</span>
+      <span id="pctText">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="view-tabs" id="viewTabs"></div>
+  <div class="filter-row" id="filterRow"></div>
+  <div id="taskList"></div>
+
+  <footer>영업본부 &nbsp;·&nbsp; 4/20 회의록 기준 업무 현황 &nbsp;·&nbsp; 체크 완료 시 브라우저에 저장됩니다</footer>
+</div>
+
+<script>
+const TASKS = [
+  {id:1, text:'KT 점퍼코드 원가 확인 양식 파일 회신 (SCM 4/24 회신 위해)', person:'김희수 차장', deadline:'4/22(수) 12시', day:'4/22', cat:'KT', urgent:true},
+  {id:2, text:'광덕트 파주 2차 인상안 준비 (1차 보고완료, 현장담당자 미숙지)', person:'양태양 과장', deadline:'4/21(화) 15시', day:'4/21', cat:'KT', urgent:true},
+  {id:3, text:'심선접속자 25P 인상률 확인 및 인상안 준비 (코닝 인상공문 포함, 15~20% 예상)', person:'양태양 과장', deadline:'4/22(수) 15시', day:'4/22', cat:'KT', urgent:true},
+  {id:4, text:'IDC 인상안 준비 및 보고', person:'양태양 과장', deadline:'4/24(금)', day:'4/24', cat:'KT', urgent:false},
+  {id:5, text:'LG 광접속함체 관리 방안 기안 작성 (선입고 업체 취소, 인수증 처리 예정)', person:'김희수 차장', deadline:'4/21(화)', day:'4/21', cat:'LG', urgent:true},
+  {id:6, text:'LG 광접속함체 발주 수량 줄여서 재보고 (부사장님 지침)', person:'김희수 차장', deadline:'4/21(화)', day:'4/21', cat:'LG', urgent:true},
+  {id:7, text:'LG 광점퍼코드 단가 인상 시점 파악 후 기안 작성', person:'김희수 차장', deadline:'4/21(화) 오전', day:'4/21', cat:'LG', urgent:true},
+  {id:8, text:'IJP박스 미처리건 처리 방안 협의 (LG 증빙서류 요청, 미지출 방향으로 업체 협의)', person:'김희수 차장', deadline:'4/21(화)', day:'4/21', cat:'LG', urgent:true},
+  {id:9, text:'헬로비젼 출고 중단(4/20~) 내부 관리방안 협의 후 회신', person:'김한나 대리', deadline:'4/21(화) 오전', day:'4/21', cat:'헬로비젼', urgent:true},
+  {id:10, text:'마감보고서 영업팀 보고 방식 회의', person:'영업팀 전체', deadline:'4/24(금) 16시', day:'4/24', cat:'내부', urgent:false},
+  {id:11, text:'발주요청서·원가요청서 내부 양식 일원화 (품목코드, 규격, 납기일, 발주수량, 특이사항 필수)', person:'영업관리팀', deadline:'상시', day:'상시', cat:'내부', urgent:false},
+  {id:12, text:'덕트 세금계산서 양식 일원화 (발행일자, 공급가액, 오더번호 필수)', person:'영업관리팀', deadline:'상시', day:'상시', cat:'내부', urgent:false},
+  {id:13, text:'업체 견적·문의 대응 1~2일 이내 (타부서 건 포함, 구글시트 관리)', person:'영업팀 전체', deadline:'상시', day:'상시', cat:'내부', urgent:false},
+  {id:14, text:'KT 심선접속자(01P,25P), 광덕트, IDC 인상 요청 (사장님 지침)', person:'담당자 TBD', deadline:'긴급', day:'4/21', cat:'KT', urgent:true},
+  {id:15, text:'2025년 덕트 선발주 금액 상반기 처리 완료 (공사 계획 & 미팅 결과 보고)', person:'담당자 TBD', deadline:'상반기', day:'상시', cat:'KT', urgent:false}
+];
+
+const DAYS_ORDER = ['4/21','4/22','4/24','상시'];
+const DAY_LABELS = {'4/21':'4/21 (화) — 긴급','4/22':'4/22 (수)','4/24':'4/24 (금)','상시':'상시 / 기타'};
+const CATS = ['전체','KT','LG','헬로비젼','내부'];
+const PERSONS = ['전체','김희수 차장','양태양 과장','김한나 대리','영업관리팀','영업팀 전체','담당자 TBD'];
+const KEY = 'ajw_sched_v3';
+
+let cv = 'day', cf = '전체';
+let state = {done:[], reasons:{}, open:{}};
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if(s) state = JSON.parse(s); } catch(e){}
+  render();
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+function isDone(id) { return state.done.indexOf(id) > -1; }
+function toggle(id) {
+  const i = state.done.indexOf(id);
+  if(i > -1) state.done.splice(i,1); else state.done.push(id);
+  save(); renderTasks(); renderStats();
+}
+function toggleR(id) { state.open[id] = !state.open[id]; renderTasks(); }
+function saveR(id) {
+  const v = document.getElementById('r_'+id).value.trim();
+  state.reasons[id] = v; save();
+  const msg = document.getElementById('msg_'+id);
+  if(msg) { msg.style.display='inline'; setTimeout(()=>{ msg.style.display='none'; renderTasks(); }, 1200); }
+}
+
+function getFilt() {
+  return TASKS.filter(t => {
+    if(cf === '전체') return true;
+    return cv === 'day' ? t.cat === cf : t.person === cf;
+  });
+}
+
+function render() { renderViewTabs(); renderFilterRow(); renderTasks(); renderStats(); }
+
+function renderViewTabs() {
+  document.getElementById('viewTabs').innerHTML = [
+    {k:'day', l:'날짜별'},
+    {k:'person', l:'담당자별'}
+  ].map(t => `<div class="view-tab ${cv===t.k?'active':''}" onclick="sw('${t.k}')">${t.l}</div>`).join('');
+}
+
+function renderFilterRow() {
+  const items = cv === 'day' ? CATS : PERSONS;
+  document.getElementById('filterRow').innerHTML = items.map(f =>
+    `<div class="filter-btn ${cf===f?'on':''}" onclick="sf('${f}')">${f}</div>`
+  ).join('');
+}
+
+function sw(v) { cv=v; cf='전체'; render(); }
+function sf(f) { cf=f; renderFilterRow(); renderTasks(); }
+
+function renderTasks() {
+  const tasks = getFilt();
+  const el = document.getElementById('taskList');
+  if(!tasks.length) { el.innerHTML='<div class="empty">해당하는 업무가 없습니다.</div>'; return; }
+
+  let html = '';
+  const groups = cv === 'day'
+    ? DAYS_ORDER.map(d => ({k:d, l:DAY_LABELS[d], items:tasks.filter(t=>t.day===d)}))
+    : PERSONS.filter(p=>p!=='전체').map(p => ({k:p, l:p, items:tasks.filter(t=>t.person===p)}));
+
+  groups.forEach(g => {
+    if(!g.items.length) return;
+    html += `<div class="section-label">${g.l}</div>`;
+    g.items.forEach(t => {
+      const done = isDone(t.id);
+      const isU = t.urgent && !done;
+      const reason = state.reasons[t.id] || '';
+      const isOpen = state.open[t.id];
+
+      html += `<div class="task-item ${isU?'urgent-border':''} ${done?'done-item':''}">
+        <div class="task-row">
+          <div class="checkbox ${done?'checked':''}" onclick="toggle(${t.id})"></div>
+          <div class="task-body">
+            <div class="task-text ${done?'striked':''}">${t.text}</div>
+            <div class="task-meta">
+              <span class="badge badge-person">${t.person}</span>
+              <span class="badge badge-deadline ${isU?'urg':''}">${t.deadline}</span>
+              <span class="badge badge-cat">${t.cat}</span>
+              ${isU ? '<span class="badge badge-urgent">긴급</span>' : ''}
+            </div>
+          </div>
+          <div class="reason-toggle" onclick="toggleR(${t.id})">${isOpen?'닫기':(reason?'사유 수정':'사유 입력')}</div>
+        </div>
+        ${isOpen ? `
+        <div class="reason-area">
+          <div class="reason-label">진행 안된 사유 / 메모</div>
+          <textarea class="reason-input" id="r_${t.id}" rows="2" placeholder="예: 담당자 부재로 4/23으로 연기">${reason}</textarea>
+          <div style="display:flex;align-items:center;margin-top:0;">
+            <button class="save-btn" onclick="saveR(${t.id})">저장</button>
+            <span class="saved-msg" id="msg_${t.id}">저장됐습니다</span>
+          </div>
+        </div>` : (reason ? `
+        <div class="reason-area" style="padding-top:8px;padding-bottom:10px;">
+          <div class="reason-display"><span class="reason-display-prefix">메모</span>${reason}</div>
+        </div>` : '')}
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+function renderStats() {
+  const total = TASKS.length;
+  const done = state.done.length;
+  const left = total - done;
+  const pct = Math.round(done/total*100);
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statLeft').textContent = left;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('pctText').textContent = pct + '%';
+}
+
+load();
+</script>
+</body>
+</html>
