@@ -452,10 +452,21 @@ const BASE_CATS    = ['KT','LG','헬로비젼','내부'];
 const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
+const IMPORT_KEY   = 'ajw_imports_v1';
 
 /* ── User mode ── */
 let currentUser = null; // null=미선택, '__manager__'=통합보기, else=팀원이름
 let importedPersonData = {}; // { personName: exportedState }
+
+function saveImports() {
+  try { localStorage.setItem(IMPORT_KEY, JSON.stringify(importedPersonData)); } catch(e) {}
+}
+function loadImports() {
+  try {
+    const s = localStorage.getItem(IMPORT_KEY);
+    if (s) importedPersonData = JSON.parse(s);
+  } catch(e) {}
+}
 
 function isPersonalMode() { return currentUser && currentUser !== '__manager__'; }
 function getStorageKey() {
@@ -571,6 +582,7 @@ function setUser(name) {
   sessionStorage.setItem('ajw_user', name);
   document.getElementById('userSelectOverlay').style.display = 'none';
   loadState();
+  if (name === '__manager__') loadImports();
   cv = isPersonalMode() ? 'day' : 'report';
   render();
 }
@@ -609,15 +621,16 @@ function readImportFile(file) {
       const data = JSON.parse(ev.target.result);
       if (!data.person) { alert(`"${file.name}": 올바른 형식의 파일이 아닙니다.`); return; }
       importedPersonData[data.person] = data;
+      saveImports();
       renderContent();
     } catch(err) { alert(`"${file.name}": 파일 읽기 오류`); }
   };
   reader.readAsText(file);
 }
-function removeImport(person) { delete importedPersonData[person]; renderContent(); }
+function removeImport(person) { delete importedPersonData[person]; saveImports(); renderContent(); }
 function clearImports() {
   if (!confirm('업로드된 데이터를 모두 초기화하시겠습니까?')) return;
-  importedPersonData = {}; renderContent();
+  importedPersonData = {}; saveImports(); renderContent();
 }
 function mergeAndApply() {
   const imports = Object.values(importedPersonData);
@@ -631,7 +644,7 @@ function mergeAndApply() {
     Object.assign(merged.scheduleChanged, d.scheduleChanged||{});
     (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id)) merged.customTasks.push(t); });
   });
-  state = merged; save(); cv = 'report'; render();
+  state = merged; save(); saveImports(); cv = 'report'; render();
   const el = document.getElementById('importResult');
   if (el) { el.textContent = `✓ ${imports.length}명의 데이터가 취합됐습니다. 주간보고 탭에서 확인하세요.`; el.style.display='block'; }
 }
@@ -690,6 +703,7 @@ function resetAll() {
   if (!confirm('모든 체크·메모·추가업무·수정 내용이 삭제됩니다.\n기본 업무 목록도 모두 숨겨집니다.\n정말 초기화하시겠습니까?')) return;
   // 관리자 키만 삭제 (개인 사용자 데이터는 유지)
   localStorage.removeItem(KEY);
+  localStorage.removeItem(IMPORT_KEY);
   state = {
     done:[], status:{}, open:{}, customTasks:[], edits:{},
     deleted: BASE_TASKS.map(t => t.id), // 기본 업무 모두 숨김
@@ -1164,6 +1178,7 @@ function submitTask() {
   if (savedUser) {
     currentUser = savedUser;
     loadState();
+    if (currentUser === '__manager__') loadImports();
     cv = isPersonalMode() ? 'day' : 'report';
     render();
   } else {
