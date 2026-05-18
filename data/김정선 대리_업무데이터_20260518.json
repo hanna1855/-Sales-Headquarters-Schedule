@@ -1,29 +1,18 @@
 {
   "person": "김정선 대리",
-  "exportDate": "2026-05-18T02:32:49.456Z",
+  "exportDate": "2026-05-18T05:05:42.228Z",
   "version": "ajw_v1",
-  "done": [
-    1779071464401
-  ],
+  "done": [],
   "status": {},
   "open": {},
   "customTasks": [
     {
-      "id": 1779071464401,
-      "text": "거래처 발주 전산 입력 및 대응",
+      "id": 1779080740083,
+      "text": "물류비  재작성",
       "person": "김정선 대리",
-      "deadline": "5/18",
-      "day": "5/18",
-      "cat": "LG",
-      "urgent": false
-    },
-    {
-      "id": 1779071542904,
-      "text": "KTC 코닝 제품 물류비 정산 발주 요청서 기안 재작성",
-      "person": "김정선 대리",
-      "deadline": "5/18",
+      "deadline": "5/19(화) 12시",
       "day": "5/19",
-      "cat": "내부",
+      "cat": "KT",
       "urgent": false
     }
   ],
