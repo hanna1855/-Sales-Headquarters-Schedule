@@ -1,1 +1,13 @@
-.vercel
+# Vercel
+.vercel/
+
+# 엑셀 파일
+*.xlsx
+*.xls
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db
+
+# 에디터
+.vscode/
