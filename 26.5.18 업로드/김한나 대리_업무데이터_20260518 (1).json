@@ -1,0 +1,42 @@
+{
+  "person": "김한나 대리",
+  "exportDate": "2026-05-18T02:55:57.555Z",
+  "version": "ajw_v1",
+  "done": [
+    9
+  ],
+  "status": {},
+  "open": {},
+  "customTasks": [
+    {
+      "id": 1779072305499,
+      "text": "광점퍼코드,광분배함 입찰 준비",
+      "person": "김한나 대리",
+      "deadline": "5/20",
+      "day": "5/20",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779072328924,
+      "text": "RN스플리터 입찰준비(26/5/30 계약 종료)",
+      "person": "김한나 대리",
+      "deadline": "5/22",
+      "day": "5/22",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779072396915,
+      "text": "AJP 공급 유통자재 단가 협상",
+      "person": "김한나 대리",
+      "deadline": "5/22",
+      "day": "5/22",
+      "cat": "내부",
+      "urgent": false
+    }
+  ],
+  "edits": {},
+  "deleted": [],
+  "scheduleChanged": {}
+}
