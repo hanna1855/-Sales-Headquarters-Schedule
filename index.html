@@ -414,6 +414,9 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
   </div>
 </div>
 
+<!-- Auto Load Banner -->
+<div id="autoLoadBanner" style="display:none;position:fixed;bottom:24px;right:24px;z-index:400;background:var(--green);color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.18);"></div>
+
 <!-- User Select Overlay -->
 <div class="user-select-overlay" id="userSelectOverlay" style="display:none">
   <div class="user-select-box">
@@ -582,7 +585,7 @@ function setUser(name) {
   sessionStorage.setItem('ajw_user', name);
   document.getElementById('userSelectOverlay').style.display = 'none';
   loadState();
-  if (name === '__manager__') loadImports();
+  if (name === '__manager__') { loadImports(); autoLoadTeamData(); }
   cv = isPersonalMode() ? 'day' : 'report';
   render();
 }
@@ -1172,13 +1175,59 @@ function submitTask() {
   if(msg){ msg.style.display='block'; setTimeout(()=>{ cv='person'; cf='전체'; render(); },900); }
 }
 
+/* ── auto load team data from /data/manifest.json ── */
+async function autoLoadTeamData() {
+  try {
+    const res = await fetch('data/manifest.json?t=' + Date.now());
+    if (!res.ok) return;
+    const manifest = await res.json();
+    if (!manifest.files || !manifest.files.length) return;
+
+    const results = await Promise.all(
+      manifest.files.map(f =>
+        fetch('data/' + encodeURIComponent(f) + '?t=' + Date.now())
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+
+    const valid = results.filter(d => d && d.person);
+    if (!valid.length) return;
+
+    valid.forEach(d => { importedPersonData[d.person] = d; });
+    saveImports();
+
+    // 취합 적용
+    const merged = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[...state.deleted], scheduleChanged:{} };
+    valid.forEach(d => {
+      (d.done||[]).forEach(id => { if(!merged.done.includes(id)) merged.done.push(id); });
+      Object.assign(merged.status, d.status||{});
+      Object.assign(merged.edits, d.edits||{});
+      Object.assign(merged.scheduleChanged, d.scheduleChanged||{});
+      (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id)) merged.customTasks.push(t); });
+    });
+    state = merged; save(); render();
+
+    // 완료 배너
+    showAutoLoadBanner(valid.length);
+  } catch(e) {}
+}
+
+function showAutoLoadBanner(count) {
+  const el = document.getElementById('autoLoadBanner');
+  if (!el) return;
+  el.textContent = `✓ 팀원 데이터 ${count}명 자동 취합됨`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
 /* ── app init ── */
 (function initApp() {
   const savedUser = sessionStorage.getItem('ajw_user');
   if (savedUser) {
     currentUser = savedUser;
     loadState();
-    if (currentUser === '__manager__') loadImports();
+    if (currentUser === '__manager__') { loadImports(); autoLoadTeamData(); }
     cv = isPersonalMode() ? 'day' : 'report';
     render();
   } else {
