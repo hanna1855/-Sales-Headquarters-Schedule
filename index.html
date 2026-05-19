@@ -91,7 +91,8 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 
 /* Stats */
 .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
-.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); cursor:pointer; transition:box-shadow 0.15s, border-color 0.15s; }
+.stat-card:hover { border-color:var(--purple-border); box-shadow:0 2px 12px rgba(83,74,183,.13); }
 .stat-label { font-size:11px; color:var(--text-muted); margin-bottom:3px; }
 .stat-val   { font-size:26px; font-weight:700; }
 .stat-val.c-done { color:var(--green); } .stat-val.c-left { color:var(--red); } .stat-val.c-urg { color:var(--red); }
@@ -360,6 +361,24 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
   .report-ov-fill,.rt-bar-fill { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .report-section { break-inside:avoid; }
 }
+
+/* Stat Modal */
+.stat-modal-overlay { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; padding:1rem; }
+.stat-modal-overlay.open { display:flex; }
+.stat-modal-box { background:var(--surface); border-radius:var(--radius); width:100%; max-width:560px; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+.stat-modal-head { display:flex; align-items:center; justify-content:space-between; padding:15px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:1; }
+.stat-modal-title { font-size:15px; font-weight:700; }
+.stat-modal-body { padding:14px 20px; display:flex; flex-direction:column; gap:8px; }
+.stat-modal-empty { font-size:13px; color:var(--text-muted); text-align:center; padding:24px 0; }
+.stat-modal-item { background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:11px 14px; }
+.stat-modal-item-text { font-size:13px; font-weight:500; line-height:1.45; margin-bottom:5px; }
+.stat-modal-item-meta { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.stat-modal-tag { font-size:11px; padding:2px 8px; border-radius:99px; font-weight:600; }
+.tag-person { background:var(--purple-light); color:var(--purple); border:1px solid var(--purple-border); }
+.tag-deadline { background:var(--bg); color:var(--text-muted); border:1px solid var(--border); }
+.tag-cat { background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
+.tag-urgent { background:var(--red-light); color:#A32D2D; border:1px solid var(--red-border); }
+.tag-done { background:var(--green-light); color:var(--green); border:1px solid #6DB89A; }
 </style>
 </head>
 <body>
@@ -379,7 +398,7 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
   <div class="main-wrapper">
     <header class="topbar">
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="topbar-title" id="topbarTitle">주간보고</span>
+        <span class="topbar-title" id="topbarTitle">대시보드</span>
         <span class="topbar-sub">브라우저 자동 저장</span>
       </div>
       <div id="topbarRight" style="display:flex;align-items:center;gap:8px;"></div>
@@ -411,6 +430,17 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
       <button class="modal-del-btn" onclick="deleteTask(editingId)">삭제</button>
       <button class="modal-save-btn" onclick="saveEdit()">저장</button>
     </div>
+  </div>
+</div>
+
+<!-- Stat Modal -->
+<div class="stat-modal-overlay" id="statModal" onclick="statModalBgClick(event)">
+  <div class="stat-modal-box">
+    <div class="stat-modal-head">
+      <span class="stat-modal-title" id="statModalTitle"></span>
+      <button class="modal-close" onclick="closeStatModal()">×</button>
+    </div>
+    <div class="stat-modal-body" id="statModalBody"></div>
   </div>
 </div>
 
@@ -473,7 +503,7 @@ function getStorageKey() {
 }
 
 const TABS_MANAGER = [
-  {k:'report',   l:'주간보고',       icon:'📊'},
+  {k:'report',   l:'대시보드',       icon:'📊'},
   {k:'calendar', l:'월간달력',       icon:'📅'},
   {k:'day',      l:'주간일별',       icon:'📋'},
   {k:'person',   l:'담당자별',       icon:'👤'},
@@ -644,7 +674,7 @@ function mergeAndApply() {
   });
   state = merged; save(); saveImports(); cv = 'report'; render();
   const el = document.getElementById('importResult');
-  if (el) { el.textContent = `✓ ${imports.length}명의 데이터가 취합됐습니다. 주간보고 탭에서 확인하세요.`; el.style.display='block'; }
+  if (el) { el.textContent = `✓ ${imports.length}명의 데이터가 취합됐습니다. 대시보드 탭에서 확인하세요.`; el.style.display='block'; }
 }
 
 /* ── import view HTML ── */
@@ -791,6 +821,32 @@ function openEdit(id) {
 }
 function closeModal() { document.getElementById('editModal').classList.remove('open'); editingId=null; editUrgentOn=false; }
 function modalBgClick(e) { if(e.target===document.getElementById('editModal')) closeModal(); }
+
+function openStatModal(type) {
+  const {tasks} = getStatsScope();
+  let filtered, title;
+  if (type==='전체')   { filtered=tasks; title='전체 업무 목록'; }
+  else if (type==='완료')  { filtered=tasks.filter(t=>isDone(t.id)); title='완료된 업무'; }
+  else if (type==='미완료') { filtered=tasks.filter(t=>!isDone(t.id)); title='미완료 업무'; }
+  else if (type==='긴급')  { filtered=tasks.filter(t=>t.urgent&&!isDone(t.id)); title='긴급 미완료 업무'; }
+  document.getElementById('statModalTitle').textContent=`${title} (${filtered.length}건)`;
+  document.getElementById('statModalBody').innerHTML = filtered.length
+    ? filtered.map(t=>`
+        <div class="stat-modal-item">
+          <div class="stat-modal-item-text">${t.text}</div>
+          <div class="stat-modal-item-meta">
+            <span class="stat-modal-tag tag-person">${t.person}</span>
+            <span class="stat-modal-tag tag-deadline">${t.deadline}</span>
+            <span class="stat-modal-tag tag-cat">${t.cat}</span>
+            ${t.urgent&&!isDone(t.id)?'<span class="stat-modal-tag tag-urgent">긴급</span>':''}
+            ${isDone(t.id)?'<span class="stat-modal-tag tag-done">완료</span>':''}
+          </div>
+        </div>`).join('')
+    : '<div class="stat-modal-empty">해당 업무가 없습니다.</div>';
+  document.getElementById('statModal').classList.add('open');
+}
+function closeStatModal() { document.getElementById('statModal').classList.remove('open'); }
+function statModalBgClick(e) { if(e.target===document.getElementById('statModal')) closeStatModal(); }
 function toggleEU() { editUrgentOn=!editUrgentOn; const el=document.getElementById('ep_urgentRow'); if(el) el.classList.toggle('on',editUrgentOn); }
 function onEPChange() { const s=document.getElementById('ep_person'),i=document.getElementById('ep_person_new'); if(i) i.style.display=s.value==='__new__'?'block':'none'; }
 function onECChange() { const s=document.getElementById('ep_cat'),  i=document.getElementById('ep_cat_new');    if(i) i.style.display=s.value==='__new__'?'block':'none'; }
@@ -856,10 +912,10 @@ function renderStats() {
   const urg=tasks.filter(t=>t.urgent&&!isDone(t.id)).length;
   const pct=total?Math.round(done/total*100):0;
   document.getElementById('statsGrid').innerHTML=
-    `<div class="stat-card"><div class="stat-label">전체</div><div class="stat-val">${total}</div></div>
-     <div class="stat-card"><div class="stat-label">완료</div><div class="stat-val c-done">${done}</div></div>
-     <div class="stat-card"><div class="stat-label">미완료</div><div class="stat-val c-left">${total-done}</div></div>
-     <div class="stat-card"><div class="stat-label">긴급 미완료</div><div class="stat-val c-urg">${urg}</div></div>`;
+    `<div class="stat-card" onclick="openStatModal('전체')"><div class="stat-label">전체</div><div class="stat-val">${total}</div></div>
+     <div class="stat-card" onclick="openStatModal('완료')"><div class="stat-label">완료</div><div class="stat-val c-done">${done}</div></div>
+     <div class="stat-card" onclick="openStatModal('미완료')"><div class="stat-label">미완료</div><div class="stat-val c-left">${total-done}</div></div>
+     <div class="stat-card" onclick="openStatModal('긴급')"><div class="stat-label">긴급 미완료</div><div class="stat-val c-urg">${urg}</div></div>`;
   document.getElementById('progressCtx').textContent=label;
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('pctText').textContent=pct+'%';
