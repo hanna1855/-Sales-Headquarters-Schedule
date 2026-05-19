@@ -199,7 +199,15 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 .cal-panel-title { font-size:13px; font-weight:700; color:var(--purple); }
 .cal-panel-close { cursor:pointer; font-size:16px; color:var(--purple); width:24px; height:24px; border-radius:5px; display:flex; align-items:center; justify-content:center; transition:background 0.1s; }
 .cal-panel-close:hover { background:var(--purple-border); }
-.cal-panel-body { padding:8px 10px 10px; }
+.cal-panel-body { padding:10px 12px 12px; }
+.cal-person-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.cal-person-col { min-width:170px; flex-shrink:0; }
+.cal-person-head { font-size:11px; font-weight:700; padding:5px 10px; border-radius:7px; background:var(--purple-light); color:var(--purple); margin-bottom:7px; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; }
+.cal-person-count { font-size:10px; font-weight:400; background:var(--purple); color:white; border-radius:99px; padding:1px 6px; }
+.cal-task-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 11px; margin-bottom:6px; }
+.cal-task-card.urgent-card { border-left:3px solid var(--red); }
+.cal-task-card.cal-card-done { opacity:0.55; }
+.cal-task-card-text { font-size:12px; font-weight:500; line-height:1.4; margin-bottom:5px; }
 
 /* Weekly Report */
 .report-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.25rem; padding-bottom:1.1rem; border-bottom:1.5px solid var(--border); }
@@ -497,7 +505,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-8';
+const APP_VERSION  = '20260519-9';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -1149,12 +1157,34 @@ function calendarViewHTML() {
   if(selectedDay){
     const dayTasks=allTasks().filter(t=>t.day===selectedDay);
     if(dayTasks.length){
+      const persons=[...new Set(dayTasks.map(t=>t.person))];
+      const personCols=persons.map(p=>{
+        const pTasks=dayTasks.filter(t=>t.person===p);
+        const cards=pTasks.map(t=>{
+          const done=isDone(t.id), stage=getTaskStage(t.id), s=state.status[t.id]||'';
+          return `<div class="cal-task-card${t.urgent&&!done?' urgent-card':''}${done?' cal-card-done':''}">
+            <div class="cal-task-card-text">${t.text}</div>
+            <div class="kanban-card-meta">
+              <span class="stat-modal-tag tag-deadline">${t.deadline}</span>
+              <span class="stat-modal-tag tag-cat">${t.cat}</span>
+              ${t.urgent&&!done?'<span class="stat-modal-tag tag-urgent">긴급</span>':''}
+              ${done?'<span class="stat-modal-tag tag-done">완료</span>':''}
+              ${stage==='inprogress'?'<span class="stat-modal-tag" style="background:var(--amber-light);color:#92600A;border:1px solid #FAC775;">진행중</span>':''}
+            </div>
+            ${s?`<div class="kanban-card-status">현황: ${s}</div>`:''}
+          </div>`;
+        }).join('');
+        return `<div class="cal-person-col">
+          <div class="cal-person-head">${p}<span class="cal-person-count">${pTasks.length}</span></div>
+          ${cards}
+        </div>`;
+      }).join('');
       html+=`<div class="cal-panel">
         <div class="cal-panel-head">
           <span class="cal-panel-title">${selectedDay} 업무 ${dayTasks.length}건</span>
           <div class="cal-panel-close" onclick="selectDay('${selectedDay}')">×</div>
         </div>
-        <div class="cal-panel-body">${dayTasks.map(t=>taskHTML(t,true,isDone(t.id))).join('')}</div>
+        <div class="cal-panel-body"><div class="cal-person-grid">${personCols}</div></div>
       </div>`;
     }
   }
