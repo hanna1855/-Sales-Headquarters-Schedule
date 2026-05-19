@@ -204,7 +204,7 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 .cal-panel-close:hover { background:var(--purple-border); }
 .cal-panel-body { padding:10px 12px 12px; }
 /* Person card grid */
-.person-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; padding:12px 14px 14px; }
+.person-card-grid { display:flex; flex-direction:column; gap:8px; padding:12px 14px 14px; }
 .person-card { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 13px; display:flex; flex-direction:column; gap:7px; transition:box-shadow 0.15s; }
 .person-card:hover { box-shadow:0 2px 10px rgba(0,0,0,0.08); }
 .person-card.pc-urgent { border-left:3px solid var(--red); }
@@ -217,6 +217,11 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 .person-card-text.striked { text-decoration:line-through; color:var(--text-muted); }
 .person-card-badges { display:flex; gap:5px; flex-wrap:wrap; }
 .person-card-actions { display:flex; gap:6px; }
+.dday-badge { font-size:10px; font-weight:700; padding:1px 7px; border-radius:99px; white-space:nowrap; }
+.dday-overdue { background:var(--red-light); color:#A32D2D; }
+.dday-today   { background:#FFF3E0; color:#E65100; }
+.dday-near    { background:#FFF8E1; color:#7B5800; }
+.dday-far     { background:var(--surface); color:var(--text-muted); }
 
 .cal-person-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
 .cal-person-col { min-width:170px; flex-shrink:0; }
@@ -818,6 +823,25 @@ function sortByDeadline(tasks) {
   };
   return [...tasks].sort((a,b)=>parseDay(a.day)-parseDay(b.day));
 }
+function calcDday(day) {
+  if(!day||day==='상시') return null;
+  const p=day.split('/');
+  if(p.length!==2) return null;
+  const m=parseInt(p[0]),d=parseInt(p[1]);
+  if(isNaN(m)||isNaN(d)) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const yr=today.getFullYear();
+  let tgt=new Date(yr,m-1,d); tgt.setHours(0,0,0,0);
+  if(tgt<today&&(today-tgt)>1000*60*60*24*180) tgt=new Date(yr+1,m-1,d);
+  const diff=Math.round((tgt-today)/(1000*60*60*24));
+  return diff===0?'D-Day':diff>0?`D-${diff}`:`D+${Math.abs(diff)}`;
+}
+function ddayCls(dday) {
+  if(!dday) return '';
+  if(dday.startsWith('D+')) return 'dday-overdue';
+  if(dday==='D-Day') return 'dday-today';
+  return parseInt(dday.slice(2))<=3?'dday-near':'dday-far';
+}
 let _dragTaskId=null;
 function onCardDragStart(e,id){ _dragTaskId=id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
 function onCardDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
@@ -1103,10 +1127,13 @@ function personCardHTML(t) {
   const done=isDone(t.id);
   const sc=state.scheduleChanged&&state.scheduleChanged[t.id];
   const st=state.status&&state.status[t.id]||'';
+  const dday=calcDday(t.day);
+  const dc=ddayCls(dday);
   return `<div class="person-card${t.urgent?' pc-urgent':''}${done?' pc-done':''}">
     <div class="person-card-top">
       <div class="person-card-check${done?' checked':''}" onclick="toggle(${t.id});render()"></div>
       <span class="person-card-text${done?' striked':''}">${t.text}</span>
+      ${dday?`<span class="dday-badge ${dc}">${dday}</span>`:''}
     </div>
     <div class="person-card-badges">
       ${t.deadline?`<span class="badge badge-date">${t.deadline}</span>`:''}
