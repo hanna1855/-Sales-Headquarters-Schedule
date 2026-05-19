@@ -456,6 +456,8 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
+const APP_VERSION  = '20260519';
+const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
 let currentUser = null; // null=미선택, '__manager__'=통합보기, else=팀원이름
@@ -1223,6 +1225,14 @@ function showAutoLoadBanner(count) {
 
 /* ── app init ── */
 (function initApp() {
+  // 버전이 다르면 이전 로컬 데이터 자동 초기화
+  if (localStorage.getItem(VERSION_KEY) !== APP_VERSION) {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(IMPORT_KEY);
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
+    sessionStorage.removeItem('ajw_user');
+  }
+
   const savedUser = sessionStorage.getItem('ajw_user');
   if (savedUser) {
     currentUser = savedUser;
