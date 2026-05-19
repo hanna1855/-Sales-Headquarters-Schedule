@@ -162,6 +162,9 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 .edit-btn:hover { background:var(--purple); color:white; }
 .restore-btn { font-size:11px; color:var(--green); cursor:pointer; padding:3px 8px; border-radius:5px; border:1px solid #6DB89A; background:var(--green-light); font-weight:600; transition:all 0.15s; white-space:nowrap; }
 .restore-btn:hover { background:var(--green); color:white; }
+.del-btn-sm { font-size:11px; color:var(--red); cursor:pointer; padding:3px 8px; border-radius:5px; border:1px solid var(--red-border); background:var(--red-light); font-weight:500; transition:all 0.15s; white-space:nowrap; }
+.del-btn-sm:hover { background:var(--red); color:white; }
+.badge-date { background:var(--amber-light); color:var(--amber); }
 
 /* Status Area */
 .status-area { border-top:1px solid var(--border); padding:10px 14px 11px 44px; background:var(--bg); }
@@ -200,6 +203,21 @@ body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--
 .cal-panel-close { cursor:pointer; font-size:16px; color:var(--purple); width:24px; height:24px; border-radius:5px; display:flex; align-items:center; justify-content:center; transition:background 0.1s; }
 .cal-panel-close:hover { background:var(--purple-border); }
 .cal-panel-body { padding:10px 12px 12px; }
+/* Person card grid */
+.person-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; padding:12px 14px 14px; }
+.person-card { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 13px; display:flex; flex-direction:column; gap:7px; transition:box-shadow 0.15s; }
+.person-card:hover { box-shadow:0 2px 10px rgba(0,0,0,0.08); }
+.person-card.pc-urgent { border-left:3px solid var(--red); }
+.person-card.pc-done { opacity:0.55; }
+.person-card-top { display:flex; align-items:flex-start; gap:8px; }
+.person-card-check { width:16px; height:16px; min-width:16px; border-radius:4px; border:2px solid var(--border-strong); cursor:pointer; display:flex; align-items:center; justify-content:center; margin-top:2px; transition:all 0.15s; background:var(--surface); }
+.person-card-check.checked { background:var(--green); border-color:var(--green); }
+.person-card-check.checked::after { content:'✓'; font-size:10px; color:white; }
+.person-card-text { font-size:13px; font-weight:500; line-height:1.45; flex:1; }
+.person-card-text.striked { text-decoration:line-through; color:var(--text-muted); }
+.person-card-badges { display:flex; gap:5px; flex-wrap:wrap; }
+.person-card-actions { display:flex; gap:6px; }
+
 .cal-person-grid { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
 .cal-person-col { min-width:170px; flex-shrink:0; }
 .cal-person-head { font-size:11px; font-weight:700; padding:5px 10px; border-radius:7px; background:var(--purple-light); color:var(--purple); margin-bottom:7px; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; }
@@ -1081,15 +1099,38 @@ function dayViewHTML() {
 }
 
 /* ── person view ── */
+function personCardHTML(t) {
+  const done=isDone(t.id);
+  const sc=state.scheduleChanged&&state.scheduleChanged[t.id];
+  const st=state.status&&state.status[t.id]||'';
+  return `<div class="person-card${t.urgent?' pc-urgent':''}${done?' pc-done':''}">
+    <div class="person-card-top">
+      <div class="person-card-check${done?' checked':''}" onclick="toggle(${t.id});render()"></div>
+      <span class="person-card-text${done?' striked':''}">${t.text}</span>
+    </div>
+    <div class="person-card-badges">
+      ${t.deadline?`<span class="badge badge-date">${t.deadline}</span>`:''}
+      ${t.cat?`<span class="badge">${t.cat}</span>`:''}
+      ${t.urgent?`<span class="badge badge-urgent">긴급</span>`:''}
+      ${sc?`<span class="badge" style="background:var(--yellow-light,#fffbe6);color:#7a6200;">일정변경</span>`:''}
+    </div>
+    ${st?`<div class="status-display"><span class="status-display-prefix">현황</span>${st}</div>`:''}
+    <div class="person-card-actions">
+      <div class="edit-btn" onclick="openEdit(${t.id})">수정</div>
+      <div class="del-btn-sm" onclick="deleteTask(${t.id})">삭제</div>
+    </div>
+  </div>`;
+}
+
 function personViewHTML() {
   const persons=cf==='전체'?allPersons():[cf];
   let html='';
   persons.forEach(p=>{
     const myAll=allTasks().filter(t=>t.person===p);
-    const myInc=incompleteTasks().filter(t=>t.person===p);
+    const myInc=sortByDeadline(incompleteTasks().filter(t=>t.person===p));
     if(!myInc.length) return;
-    const total=myAll.length, done=myAll.filter(t=>isDone(t.id)).length;
-    const pct=total?Math.round(done/total*100):0;
+    const total=myAll.length, doneCount=myAll.filter(t=>isDone(t.id)).length;
+    const pct=total?Math.round(doneCount/total*100):0;
     const urg=myInc.filter(t=>t.urgent).length;
     html+=`<div class="person-section">
       <div class="person-header">
@@ -1097,12 +1138,12 @@ function personViewHTML() {
           <span class="person-name">${p}</span>
           <div class="person-stat">
             ${urg>0?`<span style="font-size:10px;background:var(--red-light);color:#A32D2D;padding:1px 7px;border-radius:99px;font-weight:600;">긴급 ${urg}</span>`:''}
-            <span class="person-pct">${done}/${total} · ${pct}%</span>
+            <span class="person-pct">${doneCount}/${total} · ${pct}%</span>
           </div>
         </div>
         <div class="person-progress-bar"><div class="person-progress-fill" style="width:${pct}%"></div></div>
       </div>
-      <div class="person-tasks">${myInc.map(t=>taskHTML(t,false,false)).join('')}</div>
+      <div class="person-card-grid">${myInc.map(t=>personCardHTML(t)).join('')}</div>
     </div>`;
   });
   return html||'<div class="empty">미완료 업무가 없습니다. 🎉</div>';
