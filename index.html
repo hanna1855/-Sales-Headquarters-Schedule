@@ -631,7 +631,7 @@ function allDays() {
 
 /* ── persistence ── */
 function loadState() {
-  state = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[], scheduleChanged:{} };
+  state = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[], scheduleChanged:{}, stages:{} };
   try {
     let s = localStorage.getItem(getStorageKey());
     if (!s && !isPersonalMode()) {
