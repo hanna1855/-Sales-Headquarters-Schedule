@@ -449,7 +449,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-3';
+const APP_VERSION  = '20260519-4';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -640,7 +640,7 @@ function mergeAndApply() {
     Object.assign(merged.status, d.status||{});
     Object.assign(merged.edits, d.edits||{});
     Object.assign(merged.scheduleChanged, d.scheduleChanged||{});
-    (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id)) merged.customTasks.push(t); });
+    (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id) && !BASE_TASKS.some(bt=>bt.id===t.id)) merged.customTasks.push(t); });
   });
   state = merged; save(); saveImports(); cv = 'report'; render();
   const el = document.getElementById('importResult');
@@ -1199,7 +1199,7 @@ async function autoLoadTeamData() {
       Object.assign(merged.status, d.status||{});
       Object.assign(merged.edits, d.edits||{});
       Object.assign(merged.scheduleChanged, d.scheduleChanged||{});
-      (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id)) merged.customTasks.push(t); });
+      (d.customTasks||[]).forEach(t => { if(!merged.customTasks.find(ct=>ct.id===t.id) && !BASE_TASKS.some(bt=>bt.id===t.id)) merged.customTasks.push(t); });
     });
     state = merged; save(); render();
 
