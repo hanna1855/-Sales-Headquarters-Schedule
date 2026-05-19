@@ -497,7 +497,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-5';
+const APP_VERSION  = '20260519-6';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -530,6 +530,7 @@ const TABS_MANAGER = [
   {k:'add',      l:'업무 추가',      icon:'➕', add:true},
 ];
 const TABS_PERSONAL = [
+  {k:'report',   l:'대시보드',  icon:'📊'},
   {k:'day',      l:'내 업무',   icon:'📋'},
   {k:'calendar', l:'월간달력',  icon:'📅'},
   {k:'add',      l:'업무 추가', icon:'➕', add:true},
@@ -682,7 +683,7 @@ function mergeAndApply() {
   const imports = Object.values(importedPersonData);
   if (!imports.length) { alert('먼저 데이터 파일을 업로드해주세요.'); return; }
   // deleted는 개인 파일에서 가져오지 않고 현재 관리자 상태 유지
-  const merged = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[...state.deleted], scheduleChanged:{} };
+  const merged = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[...state.deleted], scheduleChanged:{}, stages:{...(state.stages||{})} };
   imports.forEach(d => {
     (d.done||[]).forEach(id => { if(!merged.done.includes(id)) merged.done.push(id); });
     Object.assign(merged.status, d.status||{});
@@ -753,7 +754,7 @@ function resetAll() {
   state = {
     done:[], status:{}, open:{}, customTasks:[], edits:{},
     deleted: BASE_TASKS.map(t => t.id), // 기본 업무 모두 숨김
-    scheduleChanged:{}
+    scheduleChanged:{}, stages:{}
   };
   importedPersonData = {};
   save(); cv = 'import'; render();
@@ -772,7 +773,7 @@ function toggle(id) {
   save(); renderContent(); renderStats();
 }
 function getTaskStage(id) {
-  if(state.stages[id]) return state.stages[id];
+  if(state.stages && state.stages[id]) return state.stages[id];
   return isDone(id)?'done':'todo';
 }
 function setTaskStage(id, stage) {
@@ -1310,7 +1311,7 @@ async function autoLoadTeamData() {
     saveImports();
 
     // 취합 적용
-    const merged = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[...state.deleted], scheduleChanged:{} };
+    const merged = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[...state.deleted], scheduleChanged:{}, stages:{...(state.stages||{})} };
     valid.forEach(d => {
       (d.done||[]).forEach(id => { if(!merged.done.includes(id)) merged.done.push(id); });
       Object.assign(merged.status, d.status||{});
