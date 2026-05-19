@@ -497,7 +497,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-6';
+const APP_VERSION  = '20260519-7';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -794,9 +794,22 @@ function sortByDeadline(tasks) {
 let _dragTaskId=null;
 function onCardDragStart(e,id){ _dragTaskId=id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
 function onCardDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
-function onColDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-function onColDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
-function onColDrop(e,stage){ e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if(_dragTaskId!==null){ setTaskStage(_dragTaskId,stage); _dragTaskId=null; } }
+function _clearDragOver(){ document.querySelectorAll('.kanban-col').forEach(c=>c.classList.remove('drag-over')); }
+function boardDragOver(e){
+  const col=e.target.closest('.kanban-col');
+  if(col){ e.preventDefault(); _clearDragOver(); col.classList.add('drag-over'); }
+}
+function boardDragLeave(e){
+  if(!e.currentTarget.contains(e.relatedTarget)) _clearDragOver();
+}
+function boardDrop(e){
+  e.preventDefault(); _clearDragOver();
+  const col=e.target.closest('.kanban-col');
+  if(col && _dragTaskId!==null){
+    const stage=col.classList.contains('col-todo')?'todo':col.classList.contains('col-inprogress')?'inprogress':'done';
+    setTaskStage(_dragTaskId,stage); _dragTaskId=null;
+  }
+}
 function toggleStatus(id) { state.open[id]=!state.open[id]; renderContent(); }
 function saveStatus(id) {
   const el=document.getElementById('s_'+id); if(!el) return;
@@ -1190,8 +1203,7 @@ function reportViewHTML() {
   const doneTasks      = sortByDeadline(tasks.filter(t=>getTaskStage(t.id)==='done'));
 
   const colHTML=(stage,list,label)=>`
-    <div class="kanban-col col-${stage}"
-      ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,'${stage}')">
+    <div class="kanban-col col-${stage}">
       <div class="kanban-col-head">${label} ${list.length}건</div>
       ${list.length ? list.map(kanbanCard).join('') : '<div class="kanban-empty">업무 없음</div>'}
     </div>`;
@@ -1212,7 +1224,10 @@ function reportViewHTML() {
     </div>
     <div class="report-section">
       <div class="report-section-title">업무 칸반 보드 <span style="font-size:11px;font-weight:400;color:var(--text-muted);">카드를 드래그해서 상태를 변경하세요</span></div>
-      <div class="kanban-board">
+      <div class="kanban-board"
+        ondragover="boardDragOver(event)"
+        ondragleave="boardDragLeave(event)"
+        ondrop="boardDrop(event)">
         ${colHTML('todo',      todoTasks,       '📋 미완료')}
         ${colHTML('inprogress',inprogressTasks, '🔄 진행중')}
         ${colHTML('done',      doneTasks,       '✅ 완료')}
