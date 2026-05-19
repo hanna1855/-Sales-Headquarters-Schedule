@@ -1119,8 +1119,8 @@ function dayViewHTML() {
   allDays().forEach(d=>{
     const items=filtered.filter(t=>t.day===d);
     if(!items.length) return;
-    html+=`<div class="section-label">${d==='상시'?'상시 / 기타':d}</div>`;
-    items.forEach(t=>{html+=taskHTML(t,true,false);});
+    html+=`<div class="section-label">${d==='상시'?'상시 / 기타':d}</div>
+    <div class="person-card-grid">${items.map(t=>personCardHTML(t)).join('')}</div>`;
   });
   return html||'<div class="empty">미완료 업무가 없습니다. 🎉</div>';
 }
