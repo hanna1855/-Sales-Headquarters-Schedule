@@ -1,0 +1,34 @@
+{
+  "person": "영업팀",
+  "exportDate": "2026-05-19T04:43:50.943Z",
+  "version": "ajw_v1",
+  "done": [],
+  "status": {},
+  "open": {},
+  "customTasks": [
+    {
+      "id": 1779165814384,
+      "text": "입찰",
+      "person": "영업팀",
+      "deadline": "5/22(금)",
+      "day": "5/22",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779165827686,
+      "text": "불량방문",
+      "person": "영업팀",
+      "deadline": "5/19(화) 16시",
+      "day": "5/19",
+      "cat": "KT",
+      "urgent": false
+    }
+  ],
+  "edits": {},
+  "deleted": [
+    10,
+    13
+  ],
+  "scheduleChanged": {}
+}
