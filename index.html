@@ -497,7 +497,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-7';
+const APP_VERSION  = '20260519-8';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -574,7 +574,8 @@ function allTasks() {
   const base = BASE_TASKS
     .filter(t => !state.deleted.includes(t.id))
     .map(t => { const e=state.edits[t.id]; return e?{...t,...e}:t; });
-  const all = [...base, ...state.customTasks];
+  const custom = (state.customTasks||[]).filter(t => !BASE_TASKS.some(bt => bt.id === t.id));
+  const all = [...base, ...custom];
   if (isPersonalMode()) return all.filter(t => t.person === currentUser);
   return all;
 }
@@ -796,8 +797,9 @@ function onCardDragStart(e,id){ _dragTaskId=id; e.currentTarget.classList.add('d
 function onCardDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
 function _clearDragOver(){ document.querySelectorAll('.kanban-col').forEach(c=>c.classList.remove('drag-over')); }
 function boardDragOver(e){
+  e.preventDefault();
   const col=e.target.closest('.kanban-col');
-  if(col){ e.preventDefault(); _clearDragOver(); col.classList.add('drag-over'); }
+  if(col){ _clearDragOver(); col.classList.add('drag-over'); }
 }
 function boardDragLeave(e){
   if(!e.currentTarget.contains(e.relatedTarget)) _clearDragOver();
