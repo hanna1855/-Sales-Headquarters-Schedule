@@ -1,0 +1,40 @@
+{
+  "person": "김정선 대리",
+  "exportDate": "2026-05-19T04:16:16.112Z",
+  "version": "ajw_v1",
+  "done": [],
+  "status": {},
+  "open": {},
+  "customTasks": [
+    {
+      "id": 1779164141063,
+      "text": "마감업무",
+      "person": "김정선 대리",
+      "deadline": "5/29(금) 18시",
+      "day": "5/29",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779164157480,
+      "text": "마감",
+      "person": "김정선 대리",
+      "deadline": "5/29(금) 18시",
+      "day": "5/29",
+      "cat": "헬로비젼",
+      "urgent": false
+    },
+    {
+      "id": 1779164174143,
+      "text": "네이버보고",
+      "person": "김정선 대리",
+      "deadline": "5/20(수) 18시",
+      "day": "5/20",
+      "cat": "KT",
+      "urgent": false
+    }
+  ],
+  "edits": {},
+  "deleted": [],
+  "scheduleChanged": {}
+}

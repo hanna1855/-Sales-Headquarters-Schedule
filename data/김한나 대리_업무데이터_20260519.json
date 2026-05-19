@@ -1,0 +1,55 @@
+{
+  "person": "김한나 대리",
+  "exportDate": "2026-05-19T04:15:10.112Z",
+  "version": "ajw_v1",
+  "done": [
+    9
+  ],
+  "status": {},
+  "open": {},
+  "customTasks": [
+    {
+      "id": 1779072305499,
+      "text": "광점퍼,광분 입찰",
+      "person": "김한나 대리",
+      "deadline": "5/20(수) 18시",
+      "day": "5/20",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779072328924,
+      "text": "RN 입찰",
+      "person": "김한나 대리",
+      "deadline": "5/22(금) 15시",
+      "day": "5/22",
+      "cat": "KT",
+      "urgent": false
+    },
+    {
+      "id": 1779072396915,
+      "text": "유통자재 단가 협상",
+      "person": "김한나 대리",
+      "deadline": "5/22(금) 13시",
+      "day": "5/22",
+      "cat": "내부",
+      "urgent": false
+    }
+  ],
+  "edits": {},
+  "deleted": [],
+  "scheduleChanged": {
+    "1779072305499": {
+      "from": "5/20",
+      "fromDay": "5/20"
+    },
+    "1779072328924": {
+      "from": "5/22",
+      "fromDay": "5/22"
+    },
+    "1779072396915": {
+      "from": "5/22",
+      "fromDay": "5/22"
+    }
+  }
+}

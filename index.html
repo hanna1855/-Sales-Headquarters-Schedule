@@ -368,7 +368,7 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
   <!-- ─── Sidebar ─── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <h1>영업본부<br>업무 스케줄러</h1>
+      <h1 onclick="showUserSelect()" style="cursor:pointer;" title="초기 화면으로">영업본부<br>업무 스케줄러</h1>
       <p>AJWBP-003-01 &nbsp;·&nbsp; AJW</p>
     </div>
     <div id="mainTabs" class="main-tabs"></div>
@@ -450,7 +450,7 @@ const BASE_TASKS = [
   {id:15, text:'2025년 덕트 선발주 금액 상반기 처리 완료 (공사 계획 & 미팅 결과 보고)', person:'담당자 TBD', deadline:'상반기', day:'상시', cat:'KT', urgent:false}
 ];
 
-const BASE_PERSONS = ['영업팀','최윤화 차장','김희수 차장','양태양 과장','영업관리팀','김한나 대리','김정선 대리'];
+const BASE_PERSONS = ['영업팀','최윤환 차장','김희수 차장','양태양 과장','영업관리팀','김한나 대리','김정선 대리'];
 const BASE_CATS    = ['KT','LG','헬로비젼','내부'];
 const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const DOW_KO       = ['일','월','화','수','목','금','토'];
