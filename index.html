@@ -362,6 +362,24 @@ footer { text-align:center; margin-top:2.5rem; font-size:11px; color:var(--text-
   .report-section { break-inside:avoid; }
 }
 
+/* Kanban Board */
+.kanban-board { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+.kanban-col { background:var(--bg); border:2px solid transparent; border-radius:var(--radius); padding:12px; min-height:160px; transition:border-color 0.15s, background 0.15s; }
+.kanban-col.drag-over { border-color:var(--purple-border); background:var(--purple-light); }
+.kanban-col-head { font-size:12px; font-weight:700; padding:7px 12px; border-radius:7px; margin-bottom:10px; text-align:center; letter-spacing:0.3px; }
+.kanban-col.col-todo .kanban-col-head     { background:var(--red-light);   color:#A32D2D; }
+.kanban-col.col-inprogress .kanban-col-head { background:var(--amber-light); color:#92600A; }
+.kanban-col.col-done .kanban-col-head     { background:var(--green-light); color:var(--green); }
+.kanban-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:11px 13px; margin-bottom:8px; cursor:grab; transition:box-shadow 0.15s, transform 0.1s; user-select:none; }
+.kanban-card:active { cursor:grabbing; }
+.kanban-card:hover { box-shadow:0 3px 12px rgba(0,0,0,0.10); transform:translateY(-1px); }
+.kanban-card.dragging { opacity:0.4; box-shadow:none; transform:none; }
+.kanban-card.urgent-card { border-left:3px solid var(--red); }
+.kanban-card-text { font-size:13px; font-weight:500; line-height:1.45; margin-bottom:7px; color:var(--text); }
+.kanban-card-meta { display:flex; gap:5px; flex-wrap:wrap; }
+.kanban-card-status { font-size:11px; color:var(--amber); background:var(--amber-light); border-radius:5px; padding:4px 8px; margin-top:6px; border:1px solid #FAC775; }
+.kanban-empty { font-size:12px; color:var(--text-faint); text-align:center; padding:20px 0; }
+
 /* Stat Modal */
 .stat-modal-overlay { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; padding:1rem; }
 .stat-modal-overlay.open { display:flex; }
@@ -479,7 +497,7 @@ const MONTH_KO     = ['1월','2월','3월','4월','5월','6월','7월','8월','9
 const DOW_KO       = ['일','월','화','수','목','금','토'];
 const KEY          = 'ajw_sched_v5';
 const IMPORT_KEY   = 'ajw_imports_v1';
-const APP_VERSION  = '20260519-4';
+const APP_VERSION  = '20260519-5';
 const VERSION_KEY  = 'ajw_app_version';
 
 /* ── User mode ── */
@@ -548,7 +566,7 @@ function deadlineToDateVal(deadline, day) {
 let cv='report', cf='전체', urgentOn=false, editUrgentOn=false, editingId=null;
 let calYear=_today.getFullYear(), calMonth=_today.getMonth(), selectedDay=null;
 
-let state = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[], scheduleChanged:{} };
+let state = { done:[], status:{}, open:{}, customTasks:[], edits:{}, deleted:[], scheduleChanged:{}, stages:{} };
 
 /* ── helpers ── */
 function allTasks() {
@@ -586,7 +604,7 @@ function loadState() {
     if (s) { const p=JSON.parse(s);
       state.done=p.done||[]; state.status=p.status||p.reasons||{};
       state.open=p.open||{}; state.customTasks=p.customTasks||[];
-      state.edits=p.edits||{}; state.deleted=p.deleted||[]; state.scheduleChanged=p.scheduleChanged||{};
+      state.edits=p.edits||{}; state.deleted=p.deleted||[]; state.scheduleChanged=p.scheduleChanged||{}; state.stages=p.stages||{};
     }
   } catch(e){}
 }
@@ -749,9 +767,35 @@ function renderSidebarFooter() {
 /* ── actions ── */
 function toggle(id) {
   const i=state.done.indexOf(id);
-  if(i>-1) state.done.splice(i,1); else state.done.push(id);
+  if(i>-1) { state.done.splice(i,1); state.stages[id]='todo'; }
+  else      { state.done.push(id);   state.stages[id]='done'; }
   save(); renderContent(); renderStats();
 }
+function getTaskStage(id) {
+  if(state.stages[id]) return state.stages[id];
+  return isDone(id)?'done':'todo';
+}
+function setTaskStage(id, stage) {
+  state.stages[id]=stage;
+  if(stage==='done') { if(!state.done.includes(id)) state.done.push(id); }
+  else               { state.done=state.done.filter(d=>d!==id); }
+  save(); renderContent(); renderStats();
+}
+function sortByDeadline(tasks) {
+  const parseDay = d => {
+    if(!d||d==='상시') return 99999;
+    if(d==='긴급') return 0;
+    const m=d.match(/(\d+)\/(\d+)/);
+    return m ? parseInt(m[1])*100+parseInt(m[2]) : 99999;
+  };
+  return [...tasks].sort((a,b)=>parseDay(a.day)-parseDay(b.day));
+}
+let _dragTaskId=null;
+function onCardDragStart(e,id){ _dragTaskId=id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function onCardDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
+function onColDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onColDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function onColDrop(e,stage){ e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if(_dragTaskId!==null){ setTaskStage(_dragTaskId,stage); _dragTaskId=null; } }
 function toggleStatus(id) { state.open[id]=!state.open[id]; renderContent(); }
 function saveStatus(id) {
   const el=document.getElementById('s_'+id); if(!el) return;
@@ -825,10 +869,10 @@ function modalBgClick(e) { if(e.target===document.getElementById('editModal')) c
 function openStatModal(type) {
   const {tasks} = getStatsScope();
   let filtered, title;
-  if (type==='전체')   { filtered=tasks; title='전체 업무 목록'; }
-  else if (type==='완료')  { filtered=tasks.filter(t=>isDone(t.id)); title='완료된 업무'; }
-  else if (type==='미완료') { filtered=tasks.filter(t=>!isDone(t.id)); title='미완료 업무'; }
-  else if (type==='긴급')  { filtered=tasks.filter(t=>t.urgent&&!isDone(t.id)); title='긴급 미완료 업무'; }
+  if (type==='전체')   { filtered=sortByDeadline(tasks); title='전체 업무 목록'; }
+  else if (type==='완료')  { filtered=sortByDeadline(tasks.filter(t=>isDone(t.id))); title='완료된 업무'; }
+  else if (type==='미완료') { filtered=sortByDeadline(tasks.filter(t=>!isDone(t.id))); title='미완료 업무'; }
+  else if (type==='긴급')  { filtered=sortByDeadline(tasks.filter(t=>t.urgent&&!isDone(t.id))); title='긴급 미완료 업무'; }
   document.getElementById('statModalTitle').textContent=`${title} (${filtered.length}건)`;
   document.getElementById('statModalBody').innerHTML = filtered.length
     ? filtered.map(t=>`
@@ -1103,9 +1147,25 @@ function calendarViewHTML() {
   return html;
 }
 
-/* ── weekly report ── */
+/* ── dashboard (kanban) ── */
+function kanbanCard(t) {
+  const stage=getTaskStage(t.id);
+  const s=state.status[t.id]||'';
+  const isUrg=t.urgent&&stage!=='done';
+  return `<div class="kanban-card${isUrg?' urgent-card':''}" draggable="true"
+    ondragstart="onCardDragStart(event,${t.id})" ondragend="onCardDragEnd(event)">
+    <div class="kanban-card-text">${t.text}</div>
+    <div class="kanban-card-meta">
+      <span class="stat-modal-tag tag-person">${t.person}</span>
+      <span class="stat-modal-tag tag-deadline">${t.deadline}</span>
+      <span class="stat-modal-tag tag-cat">${t.cat}</span>
+      ${isUrg?'<span class="stat-modal-tag tag-urgent">긴급</span>':''}
+    </div>
+    ${s?`<div class="kanban-card-status">현황: ${s}</div>`:''}
+  </div>`;
+}
 function reportViewHTML() {
-  const tasks=allTasks(), inc=incompleteTasks(), comp=completedTasks();
+  const tasks=allTasks(), comp=completedTasks();
   const total=tasks.length, done=comp.length;
   const pct=total?Math.round(done/total*100):0;
   const now=new Date();
@@ -1124,11 +1184,20 @@ function reportViewHTML() {
     </tr>`;
   });
 
-  const urgLeft=inc.filter(t=>t.urgent), normLeft=inc.filter(t=>!t.urgent);
+  const todoTasks      = sortByDeadline(tasks.filter(t=>getTaskStage(t.id)==='todo'));
+  const inprogressTasks= sortByDeadline(tasks.filter(t=>getTaskStage(t.id)==='inprogress'));
+  const doneTasks      = sortByDeadline(tasks.filter(t=>getTaskStage(t.id)==='done'));
+
+  const colHTML=(stage,list,label)=>`
+    <div class="kanban-col col-${stage}"
+      ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,'${stage}')">
+      <div class="kanban-col-head">${label} ${list.length}건</div>
+      ${list.length ? list.map(kanbanCard).join('') : '<div class="kanban-empty">업무 없음</div>'}
+    </div>`;
 
   return `<div>
     <div class="report-head">
-      <div><div class="report-title">주간 업무 현황 보고</div><div class="report-date">${dateStr} 기준</div></div>
+      <div><div class="report-title">업무 현황 대시보드</div><div class="report-date">${dateStr} 기준</div></div>
       <button class="print-btn" onclick="window.print()">🖨&nbsp; 인쇄</button>
     </div>
     <div class="report-overview">
@@ -1140,21 +1209,13 @@ function reportViewHTML() {
       <div class="report-section-title">담당자별 진행 현황</div>
       <table class="report-table"><thead><tr><th>담당자</th><th class="num">전체</th><th class="num">완료</th><th class="num">미완료</th><th>진행률</th></tr></thead><tbody>${tableRows}</tbody></table>
     </div>
-    ${urgLeft.length?`<div class="report-section"><div class="report-section-title urg">🔴&nbsp; 긴급 미완료 ${urgLeft.length}건</div><div class="report-task-list">${urgLeft.map(reportRow).join('')}</div></div>`:''}
-    ${normLeft.length?`<div class="report-section"><div class="report-section-title">📋&nbsp; 일반 미완료 ${normLeft.length}건</div><div class="report-task-list">${normLeft.map(reportRow).join('')}</div></div>`:''}
-    ${done?`<div class="report-section"><div class="report-section-title done">✅&nbsp; 완료된 업무 ${done}건</div><div class="report-task-list">${comp.map(reportRow).join('')}</div></div>`:''}
-  </div>`;
-}
-function reportRow(t) {
-  const s=state.status[t.id]||'';
-  return `<div class="report-task-row">
-    <div class="report-task-info">
-      <span class="report-task-text">${t.text}</span>
-      ${s?`<span class="report-task-status">현황: ${s}</span>`:''}
-    </div>
-    <div class="report-task-meta">
-      <span class="badge badge-person">${t.person}</span>
-      <span class="badge badge-deadline">${t.deadline}</span>
+    <div class="report-section">
+      <div class="report-section-title">업무 칸반 보드 <span style="font-size:11px;font-weight:400;color:var(--text-muted);">카드를 드래그해서 상태를 변경하세요</span></div>
+      <div class="kanban-board">
+        ${colHTML('todo',      todoTasks,       '📋 미완료')}
+        ${colHTML('inprogress',inprogressTasks, '🔄 진행중')}
+        ${colHTML('done',      doneTasks,       '✅ 완료')}
+      </div>
     </div>
   </div>`;
 }
